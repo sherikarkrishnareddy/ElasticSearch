@@ -1,0 +1,84 @@
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+GET _cat/shards
+GET _cat/nodes?v
+GET _cluster/health?pretty
+GET _cat/indices
+PUT logstash-2021.07.05-000001
+{
+  "settings":{
+    "number_of_shards":1,
+    "number_of_replicas":0
+  }
+    
+}
+DELETE /products
+POST /products/_doc
+{
+  "name":"phone",
+  "price":64,
+  "in_stock":100
+}
+
+PUT /products/_doc/100
+{
+  "name":"phone",
+  "price":64,
+  "in_stock":100
+}
+GET /products/_doc/100
+
+POST /products/_update/100
+{
+  "doc":{
+    "in_stock":103
+  }
+}
+POST /products/_update/100
+{
+  "doc":{
+    "tags":["electronics"]
+  }
+}
+
+
+POST /products/_update/100
+{
+  "script": {
+    "source": "ctx._source.in_stock--"
+  }
+}
+
+POST /products/_update/100
+{
+  "script":{
+    "source":"ctx._source.name = 'smartphone'"
+  }
+}
+GET /products/_doc/100
+
+POST /products/_update/100
+{
+  "script": {
+    "source": "ctx._source.in_stock -= params.quantity",
+    "params": {
+      "quantity":4
+    }
+  }
+}
+
+POST /products/_update/100
+{
+  "script":{
+    "source":"""
+    if(ctx._source.in_stock==0){
+      ctx.op='noop';
+    }
+    ctx._source.in_stock--;
+    """
+  }
+}
