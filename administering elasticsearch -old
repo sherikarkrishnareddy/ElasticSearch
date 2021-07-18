@@ -1,0 +1,539 @@
+installing elastic-search on ubuntu server
+#check os version
+root@host:~#cat /etc/os-release
+#check hostname
+root@host:~# cat /etc/hostname
+host
+#adding JRE
+root@host:~# add-apt-repository ppa:webupd8team/java
+#refreshing packagelist
+root@host:~# apt-get update
+root@host:~# apt-get install oracle-java8-installer
+#verify java version
+root@host:~# java -version
+root@host:~# wget https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/YOURVERSION/elasticsearch-YOURVERSION
+root@host:~# dpkg -i elasticsearch-YOURVERSION.deb
+root@host:~# service elasticsearch start
+root@host:~#curl http://localhost:9200
+{
+  "name" : "Macbooks-MBP",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "bsIiLRFlS9S3RBRvvJ8UfQ",
+  "version" : {
+    "number" : "7.3.2",
+    "build_flavor" : "default",
+    "build_type" : "tar",
+    "build_hash" : "1c1faf1",
+    "build_date" : "2019-09-06T14:40:30.409026Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.1.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+
+elasticsearch folder layout
+
+bin -> executables
+config -> contains all the configuration files
+data -> contains all elastic search indexes
+lib -> contains all the support libraries and files
+logs -> logs
+plugins -> contains external plugins which we install as per our needs
+
+
+The elastic search debian pakage doesn't use the default  file structure, it splits the files in way that make sense for the ubuntu operating system conventions.
+
+root@host:~# ls -lart /etc/elasticsearch/
+elasticsearch.yml
+logging.yml
+scripts/
+
+elasticsearch.yml contains 
+cluster.name: YOURCLUSTERNAME
+node.name:YOURNODENAME
+
+index==database
+type==table
+document==row
+fields == column
+
+An index majorly contains JSON documents plus some additional meta data of the indexed documents
+
+Adding data in to the index is indexing
+
+Indexes are stored in shards, which is itself an lucene database.
+
+Shard is the smallest unit of scale in a elasticsearch cluster, 
+
+you must atleast have one shard to contain one index.
+indexes can be split into multiple shards
+
+index split across multiple shards on a single node doesn't really add up much to the performance, as we are using finite set of resources allocated to that specific node
+for 2core,8GB RAM, 2TB storage.
+
+The performance or a higher throughput or response time is achieved, only by rebalancing the shards across multiple nodes, This achieved automatically only by adding additional nodes to the cluster.
+
+1)node'x' joins the cluster as peer
+2)Nodes exchange the information 
+3)Shards 'rebalance' and migrate load evenly across the cluster.
+
+
+concept of Replicas
+replicas are duplicates of shards
+
+1)redundancy
+2)serving Capacity
+3)acts as shards and serves data when  queries  are run across.
+4)Data is only written to the primary shards
+(active shards), replicas will be in sync with primary shards
+
+
+Node Roles
+
+1)Data nodes :
+
+workhorse of the cluster, it physically houses the shards of data that contain the indexes.
+
+Data nodes does't receive  direct query requests
+
+Data utilize much of the RAM/CPU/STORAGE,
+since they index incoming data and serving outgoing data
+
+
+2) Client Node (co-ordinating node) :
+
+This client node act as a Gateway to the cluster
+Dedicated to receive query requests and directing them to correct data node for data retrieval.
+
+having dedicated data node adds up performance, since queries are directed by client node to the data node.
+
+they don't require much of the resorces as that of data node.
+
+3)Master Node:
+
+Master node is the brains of the whole operation
+
+maintains the cluster state
+
+only Master node updates the cluster state data 
+
+every node in the cluster has a copy of cluster state
+ without Master node, cluster can't function, nor it will accept the indexing of data, or serving of data
+
+
+
+We may encounter split brain scenario , when a master node goes down and new master is elected and the older master comes back online
+
+
+
+we can avoid the above data loss issue with the below setting in elasticsearch.yml
+
+
+minimum_master_nodes:x
+
+
+
+Suppose we have cluster of 10nodes each are Master eligible,   the quorum would be 6nodes, 6nodes must be available and online inorder to elect master.
+
+quorum will be calculated as
+
+quarum=master eligible nodes/2 +1
+
+
+Suppose out of 10 only 3nodes are master eligible , then 
+Quorum=3/2+1
+Quorum=2
+
+Elastic Search recommends atleast 3 dedicated master-eligible nodes, 2 client nodes in  a production environment
+
+
+Server requirements for elastic search
+RAM
+64GB -> datanodes
+32GB -> client / master
+Storage
+RAID 0 for more speed
+RAID 0 has no fault tolerance, but elastic search has a backup facility with using automatic shard allocation
+
+Avoid using single NAS for all the nodes, as all the node will be competing for disk IO on the same NAS to serve their shards and performance can really fall.
+
+Networking
+Networking between the nodes
+1Gb ethernet will suffice
+10Gb to 1000Gb ethernet will be better for large Clusters, so that the shards can rebalance the data between the nodes ASAP and also cluster recovery will be really quick.
+
+Avoid clustering across datacenters or different geographical locations
+
+
+Virtual Machines or Docker
+
+Virtual Machines or Docker is an easy way to add nodes to a cluster and they work nicely for client or master nodes assuming the hosts they run on aren't too busy.
+
+A cluster is only as fast as its slowest node, so having one virtual machine or docker container slowing down all the traffic will put a kink in performance.
+
+Avoid using virtual machines for datanodes in production environment if at all possible.
+
+Alternatively, one can spread shards across many virtual machines, but then you could run into operations and orchestration problem ie.. if you have to change one settings on the data nodes in future, you will have lot typing to do and updating all the data nodes among the cluster
+
+Better to go with physical servers for datanodes
+
+Sample specs for Data Nodes
+
+64GB of RAM, 4 Core CPU, 4TB SSD disks in RAID 0
+
+for 4 data nodes we may end up with 16TB of Storage
+
+
+For Master and Client nodes
+32GB of RAM
+2Core CPU
+20GB disk Space
+
+
+Avoid putting more than one node of same role on the same virtual machine host!
+
+
+
+
+
+
+
+
+
+
+Operating system config for elasticsearch
+Better to go with Ansible roles/chef
+
+elasticsearch.yml
+cluster.name: "clustername"
+node:name: "es-master-01"
+or
+node:name: "es-client-01"
+or
+node:name: "es-data-01"
+
+if manually installed ES, than you can modify
+path.data:
+path.logs:
+path.plugins:
+if Operating system specfic elastic search installed , then no need to modify the above the paths
+
+if  data nodes uses (SAN or Disk array), you can modify it accordingly.
+
+ElasticSearch cluster settings under 
+2 client,3master,4 data nodes
+elasticsearch,yml
+
+minimum_master_nodes:8
+
+what if our current cluster of 9 node goes down all at once, we started it back all at once,
+
+one of the data node(datanode4) is coming up late,
+in that case, the other nodes are online and start gossips, the master node notices and automatically start rebalancing the shards of datanode4 among the available data nodes.
+
+after few moments the datanode4 is back online and joins the cluster and recognizes that its data is outdated and deletes the existing shards. The master node sees that datanode4 is available , it again rebalances the shards back to datanode4 automatically.
+
+During this ongoing transaction, the cpu,disks, memory  on all nodes are at high utilization and network will be clogged due data moving around. 
+
+Cluster performance will be terrible.
+
+We can avoid this scenario, by tweaking few settings
+since we 9 nodes cluster, we can set 
+gateway.recovery_after_nodes: 8
+gateway.expected_nodes:9
+gateway.recover_after_time:3m
+
+the above settings means
+wait until atleast 8odes are present and start recovery when either 3 minutes passes or all 9 nodes are present and active.
+
+
+by default ES will automatically look for other ES nodes on a  network using multicast
+
+ES node will constantly pull and look for responses from the nodes that may potentially join the cluster, while this convenient, it could result an issue.
+
+constantly broadcasting for new nodes can take up network bandwidth as ES nodes are already chattering among themselves.
+
+It may also join in a node (for ex: dev/tst/stg/random node) with same cluster name and config and is on same network,
+it will   start to pull shards automatically, which is undesirable.
+
+to avoid this setup unicast in elasticsearch.yml
+discovery.zen.ping.unicast.hosts:"host1","host2"...
+discovery.zen.ping.multicast.enabled:false
+here we can list of the nodes which are part of the cluster,
+discovery.zen.ping.multicast.enabled:false. disabling multicast.
+
+
+Node roles
+
+for Master node :
+
+node.master:true    
+node.data: false
+
+for client node:
+node.client:true
+node.data:false
+
+for data node :
+node.data:true
+node.master:false
+node.client:false
+
+we can setup for master or data node 
+
+http.enabled:true
+
+avoid using with datanode as they are already busy with servicing shards and indexing data.
+
+master node can use http.enabled:true to see whats happening.
+
+
+Configuring JVM.
+default = 1GB
+64GB is the max memory which can used for nodes. 
+
+elasticsearch team recommends dedicating half the available memory(<=32GB) to the heap for few reasons.
+
+1) 32GB is ample space for JVM to shuffle data around in memory
+
+2) Lucene naturally will be using rest of the memory  on shards, we don't want it to compete with JVM for it.
+
+3)heap sizes >32GB start to see diminishing returns, because of how the JVM garbage collector is set up.
+
+easiest way to setup heap size isto export and environment variable
+
+for data node
+ES_HEAP_SIZE=32G
+for master and client node
+ES_HEAP_SIZE=16G or 32G based on your availability
+
+
+Configuring SWAP.
+
+Most operating systems set up SWAP file
+used to shuffles items in memory to disk until they are needed again, when they are needed again, they are recalled from disk.
+
+the downside of swaping is that it can kill performance for memory intensive applications such as elasticsearch.
+
+we can disable the swap from OS level for ubuntu
+
+edit and remove swap from /etc/fstab
+
+and then reboot the server.
+
+if for some reason unable to do the above, we ask JVM to lock the memory and therby directing JVM to not to swap to disk.
+to set this up in elasticsearch.yml
+
+bootstrap.mlockall: true
+
+set file handles to 655536 and NMAP to unlimited
+
+fs.file-nr=65536
+
+
+setting up elaticsearch to startup right after the boot up of ubuntu
+
+root@host:~# update-rc.d elasticsearch defaults 95 10
+
+Configuring Client Node:
+
+root@host:~#nano /etc/hostname
+es-client-01
+reboot
+root@es-client-01:~#nano /etc/elasticsearch/elasticsearch.yml
+cluster.name: elasticsearch
+node.name: es-client-01
+node.client: true
+node.data: false
+since we are hosting on cloud hosting provider, we need elastic search to bind to the external ip address, so that we can access it remotely.
+
+network.host: ipaddress
+
+discovery.zen.ping.unicast.hosts:["es-client-01","es-client-02","es-master-01","es-master-02","es-master-03","es-data-01","es-data-02","es-data-03","es-data-04"]
+discovery.zen.pingmulticast.enbled:false
+
+root@es-client-01:~#service elasticsearch restart
+
+root@es-client-01:~#curl http://localhost:9200  or curl http://es-client-01:9200/_cluster/stats
+{
+"name": "es-client-01"
+"cluster_name":"elasticsearch"
+
+----
+
+}
+
+root@es-client-01:~#ulimit -n
+1024
+
+add
+root@es-client-01:~#vi /etc/security/limits.conf
+
+*     soft nofile    65536
+*     hard  nofile 65536
+root soft nofile    65536
+root hard nofile 65536
+
+root@es-client-01:~#vi /etc/pam.d/common-session
+session  required  pam_limits.so
+
+root@es-client-01:~#vi /etc/pam.d/common-session-noninteractive
+session  required  pam_limits.so
+
+
+for MMAP
+root@es-client-01:~#ulimit -m
+unlimited
+
+we have memory of 1 gb  of our node.
+
+we are allocating 1gb/2 512mb heap size
+root@es-client-01:~#vi /etc/environment
+ES_HEAP_SIZE="512m"
+
+
+add the hostnames along with ip address which are part of cluster into /etc/host
+
+root@es-client-01:~#reboot
+
+
+Configuring Master Node
+root@es-master-01:~#vi /etc/elasticsearch/elasticsearch.yml
+cluster.name: elasticsearch
+node.name: es-master-01
+node.master: true
+node.data: false
+
+since we are hosting on cloud hosting provider, we need elastic search to bind to the external ip address, so that we can access it remotely.
+
+network.host: ipaddress
+
+discovery.zen.ping.unicast.hosts:["es-client-01","es-client-02","es-master-01","es-master-02","es-master-03","es-data-01","es-data-02","es-data-03","es-data-04"]
+discovery.zen.pingmulticast.enbled:false
+
+
+root@es-master-01:~#service elasticsearch restart
+
+root@es-master-01:~# curl http://es-client-01:9200/_cluster/stats
+
+the output is gives quite a bit of info back
+status of the cluster is green
+nodes details
+
+json output is so difficult to read, we may need to install custom helper plugins to make things more visible.
+
+root@es-master-01:~# cd /usr/share/elasticsearch/bin
+
+root@es-master-01:~# /usr/share/elasticsearch/bin> ls
+elasticsearch
+elasticsearch.in.sh*
+plugin*
+
+oot@es-master-01:~/usr/share/elasticsearch/bin#./plugin install mobz/elasticsearch-head
+
+root@es-master-01:~# /usr/share/elasticsearch/bin#cd ../plugins
+root@es-master-01:~# /usr/share/elasticsearch/plugins#ls
+head
+
+root@es-master-01:~# /usr/share/elasticsearch/plugins#service elasticsearch restart
+
+
+
+
+Configuring Data Node
+root@es-data-01:~#vi /etc/elasticsearch/elasticsearch.yml
+cluster.name: elasticsearch
+node.name: es-master-01
+node.master: false
+node.data: true
+
+since we are hosting on cloud hosting provider, we need elastic search to bind to the external ip address, so that we can access it remotely.
+
+network.host: ipaddress
+
+discovery.zen.ping.unicast.hosts:["es-client-01","es-client-02","es-master-01","es-master-02","es-master-03","es-data-01","es-data-02","es-data-03","es-data-04"]
+discovery.zen.pingmulticast.enbled:false
+
+
+root@es-data-01:~#service elasticsearch restart
+
+root@es-data-01:~# curl http://es-client-01:9200/_cluster/stats
+
+the output is gives quite a bit of info back
+status of the cluster is green
+nodes details
+
+json output is so difficult to read, we may need to install custom helper plugins to make things more visible.
+
+root@es-data-01:~# cd /usr/share/elasticsearch/bin
+
+root@es-data-01:~# /usr/share/elasticsearch/bin> ls
+elasticsearch
+elasticsearch.in.sh*
+plugin*
+
+oot@es-data-01:~/usr/share/elasticsearch/bin#./plugin install mobz/elasticsearch-head
+
+root@es-data-01:~# /usr/share/elasticsearch/bin#cd ../plugins
+root@es-data-01:~# /usr/share/elasticsearch/plugins#ls
+head
+
+root@es-data-01:~# /usr/share/elasticsearch/plugins#service elasticsearch restart
+
+
+
+
+
+
+
+
+
+on browser
+http://es-master-01:9200/. hit enter, you will see the visual representation of our cluster.
+client node is represented by circle
+master node is represented by star
+
+
+Maintaing ElasticSearch cluster
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
