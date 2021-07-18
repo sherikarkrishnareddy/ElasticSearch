@@ -1,0 +1,21 @@
+1)single type/index or can omit entirely now
+
+2)SQL support
+
+3)Default shards and replications is set to 1 instead of 5
+
+4)Latest version of Lucene 8
+
+5)Xpack plugin included within ES
+
+6)Java is shipped within ES, no need to install explicitly.
+
+7)Cross cluster replication 
+
+8)ILM(index lifecycle management) hot->warm->cold->delete phases
+
+9)new JAVA client HLRC - High Level REST Client majorly used by java applications
+
+10)Higher performances, 
+
+11)Countless breaking changes
