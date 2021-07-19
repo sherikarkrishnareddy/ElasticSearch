@@ -19,3 +19,51 @@
 10)Higher performances, 
 
 11)Countless breaking changes
+
+Avoid optimistic concurreny with using retry_on_conflict option within the REST request for partial update
+for ex:
+curl -H 'Content-Type:application/json' -XPOST "vipname:9200/indexname/_doc/id/_update?if_seq_no=3&if_primary_term=1" -d'
+{
+  "doc":{
+    "yourfield":"yournewvalue"
+    }
+}'
+
+curl -H 'Content-Type:application/json' -XPOST "192.168.225.35:9200/movies/_doc/109487/_update?if_seq_no=9&if_primary_term=1" -d '
+{
+       "doc":{
+               "Title":"Interstellar is Bakwas"
+       }
+       
+}'
+
+
+curl -H 'Content-Type:application/json' -XPOST "192.168.225.35:9200/movies/_doc/109487/_update?if_seq_no=9&if_primary_term=1" -d '
+{
+       "doc":{
+               "Title":"Interstellar is Bakwas"
+       }
+       
+}'
+
+curl -H 'Content-Type:application/json' -XPOST "192.168.225.35:9200/movies/_doc/109487/_update?retry_on_conflict=5" -d '
+{
+       "doc":{
+               "title":"Interstellar"
+       }
+       
+}'
+Macbooks-MBP:es-data-01 macbook$ curl -H 'Content-Type:application/json' -XGET 192.168.225.35:9200/movies/_search?pretty -d '
+{
+        "query":{
+                "match":{
+                        "title":"star"
+                }
+        }
+}'
+
+in the mappings if keyword is set instead of text field, the values mapped to this fields are case sensitive and we may have to provide the exact term to get
+the search results.
+Deleting the existing 
+curl -H 'Content-Type:application/json' -XPUT 
+
