@@ -1313,3 +1313,45 @@ Macbooks-MBP:es-data-01 macbook$ curl -H 'Content-Type:application/json' -XPUT 1
 }
 Macbooks-MBP:es-data-01 macbook$ 
 
+
+curl -XGET "http://localhost:9200/learn/_search" -H 'Content-Type: application/json' -d'
+{
+   "_source": ["title"],
+   "size": 20,
+   "min_score": 0.5,
+   "query": {
+      "bool": {
+         "must": [],
+         "filter": [],
+         "should": [
+          {
+           "match": {
+             "title": "dick"
+             
+           }
+          },
+          {
+           "match": {
+             "title": "midnight"  
+           }
+          }
+         ],
+         "must_not": [{
+           "bool":{
+             "should":[
+              {
+                "match":{
+                  "title":"run"
+                }
+              },
+              {
+                "match":{
+                  "title":"diner"
+                }
+              }
+              ]
+           }
+        }]
+      }
+   }
+}'
