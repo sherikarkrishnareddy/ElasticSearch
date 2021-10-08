@@ -356,3 +356,50 @@ GET /custom_analyzer_index/_search
  }
 }
 
+GET /_cat/indices
+GET /learn/_search
+GET /learn/_mapping
+GET /learn/_settings
+GET /learn/_doc/_search
+
+GET /learn/_search
+{
+   "_source": ["title"],
+   "size": 20,
+   "min_score": 0.5,
+   "query": {
+      "bool": {
+         "must": [],
+         "filter": [],
+         "should": [
+          {
+           "match": {
+             "title": "dick"
+             
+           }
+          },
+          {
+           "match": {
+             "title": "midnight"  
+           }
+          }
+         ],
+         "must_not": [{
+           "bool":{
+             "should":[
+              {
+                "match":{
+                  "title":"run"
+                }
+              },
+              {
+                "match":{
+                  "title":"diner"
+                }
+              }
+              ]
+           }
+        }]
+      }
+   }
+}
