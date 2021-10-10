@@ -403,3 +403,46 @@ GET /learn/_search
       }
    }
 }
+
+parent child relation
+
+DELETE series
+PUT series/
+{
+"mappings": {
+ "properties": {
+ "title":{"type": "keyword"}, 
+ "film_to_franchise":{"type": "join","relations":{"franchise":"film"}
+      }
+    }
+  }
+}
+DELETE series
+GET series/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "franchise",
+      "query": {
+        "match": {
+          "title": "Star Wars"
+        }
+      }
+    }
+  }
+    
+}
+
+GET series/_search
+{
+  "query": {
+    "has_child": {
+      "type": "film",
+      "query": {
+        "match": {
+          "title": "Star Wars: Episode IV - A New Hope"
+        }
+      }
+    }
+  }
+}
