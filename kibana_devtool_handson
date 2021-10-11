@@ -446,3 +446,253 @@ GET series/_search
     }
   }
 }
+
+GET movies/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+POST movies/_update/135569
+{
+  "doc": {
+    "year":2014
+  }
+}
+POST movies/_doc/2020
+{
+  "doc":{
+  "titel":"hello"
+  }
+}
+GET movies/_doc/2020
+DELETE movies/_doc/2020?pretty
+GET movies/_search?q=love
+PUT movies/_doc/20201
+{
+  "title":"krishna loves soni",
+  "genre":["romantic", "love"],
+  "year":2016
+}
+GET movies/_doc/20201
+POST movies/_update/20201?retry_on_conflict=5
+{
+  "doc": {
+    "home":"G05 lily block vijayasri elixir "
+  }
+}
+
+DELETE krithahome/
+PUT krithahome/
+{
+  "mappings":{
+    "properties":{
+      "name":{"type":"keyword"},
+      "staying":{"type":"text"},
+      "phone":{"type":"integer"},
+      "nature":{"type":"text","analyzer": "english"}
+    }
+  }
+}
+DELETE movies
+
+PUT movies/
+{
+  "mappings": {
+    "properties": {
+      "id":{"type": "integer"},
+      "year":{"type":"date"},
+      "genre":{"type":"keyword"},
+      "title":{"type":"text","analyzer": "english"}
+      
+    }
+  }
+}
+GET movies/_mapping
+GET movies/_search
+
+GET movies/_search?q=past
+DELETE series
+PUT series/
+{
+"mappings": {
+ "properties": {
+ "title":{"type": "keyword"}, 
+ "film_to_franchise":{"type": "join","relations":{"franchise":"film"}
+      }
+    }
+  }
+}
+DELETE series
+GET series/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "franchise",
+      "query": {
+        "match": {
+          "title": "Star Wars"
+        }
+      }
+    }
+  }
+    
+}
+
+GET series/_search
+{
+  "query": {
+    "has_child": {
+      "type": "film",
+      "query": {
+        "match": {
+          "title": "Star Wars: Episode IV - A New Hope"
+        }
+      }
+    }
+  }
+}
+
+#flattened mapping field, no analyzers or tokenizers are applied to this fields they are treated as a keyword match, main purpose is to reduce inner field mappings and there by preventing mapping explosion no highlighting feature(as no analysis)
+GET _cluster/state
+
+PUT demo-flatened
+GET demo-flatened/_mapping
+DELETE demo-flatened
+PUT demo-flatened
+{
+  "mappings": {
+    "properties": {
+      "host":{"type": "flattened"}
+    }
+  }
+}
+GET demo-flatened/_mapping
+
+POST demo-flatened/_doc
+{
+  "doc":{
+    
+    "message": "[5592:1:0309/123054.737712:ERROR:child_process_sandbox_support_impl_linux.cc(79)] FontService unique font name matching request did not receive a response.",
+    "fileset": {
+      "name": "syslog"
+    },
+    "process": {
+      "name": "org.gnome.Shell.desktop",
+      "pid": 3383
+    },
+    "@timestamp": "2020-03-09T18:00:54.000+05:30",
+    "host": {
+      "hostname": "bionic",
+      "name": "bionic"
+    }
+  }
+  
+}
+GET demo-flatened/_search
+GET demo-flatened/_mapping
+
+POST demo-flatened/_update/d0M3anwBv-Pt7pDf_vGN
+{
+  "doc": {
+    "host":{
+      "osVersion":"Bionic Server",
+      "osArchitecture":"x86_64"
+    }
+    
+  }
+}
+
+GET demo-flatened/_doc/d0M3anwBv-Pt7pDf_vGN
+GET demo-flatened/_mapping
+
+GET demo-flatened/_search
+{
+  "query": {
+    "match": {
+      "host": "Bionic Server"
+    }
+  }
+}
+
+GET demo-flatened/_search
+{
+  "query": {
+    "match": {
+      "host.osVersion": "Bionic Server"
+    }
+  }
+}
+GET demo-flatened/_search
+{
+  "query": {
+    "match": {
+      "doc.host.name": "Bionic"
+    }
+  }
+}
+GET demo-flatened/_search
+{
+  "query": {
+    "match": {
+      "doc.host.osVersion": "Server"
+    }
+  }
+}
+
+POST microservice-logs/_doc
+{"doc":
+{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Started!" }
+}
+GET microservice-logs/_search
+
+GET microservice-logs/_mapping
+
+POST microservice-logs/_doc
+{"doc":
+{"timestamp": "2020-04-11T12:34:56.789Z", "service": "WiC", "host_ip": "10.3.2.15", "port": "6345", "message": "Started!" }
+}
+
+
+GET microservice-logs/_search
+
+
+GET /microservice-logs/_close
+
+GET /microservice-logs/_settings
+### --data-raw '{
+###    "index.mapping.ignore_malformed": true
+### }'
+
+GET /microservice-logs/_open
+
+### 6.
+GET /microservice-logs/_doc?pretty
+### --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "NONE", "message": "I am not well!" }'
+
+#mapping.ignored_malformed cant handle json object if the type field is difined as text
+#so Payload field is used to handle JSON objects.
+
+GET /microservice-logs/_doc?pretty
+### --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received":"here"}}}'
+#here is anothe trap, ie if the payoad.data.received field nested or larger JSON data, we will face the mapping issue ie
+
+GET /microservice-logs/_doc?pretty
+### --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received": {"even": "more"}}}}'
+#we may face maper exception
+#we have to be aware of this mapping fields and also establish shared guidelines  or 
+#may even consider dead letter queue pattern, ie dlq, which will store the failed documents in a seperate queue, which may be handled at application level or may be handled at logstash dlq which still allows us to process the documents
+
+#another caution is about mapping limit. by default the mapping limit is 1000, we may encounter illegal argument exception 
+#increasing the mapping limit
+
+curl XPUT 'http://localhost:9200/indexname/_settings -d '
+{
+  "index.mapping.total_fields.limit":1001
+}'
+
+
+PUT microservice-logs/_settings
+{
+  "index.mapping.total_fields.limit":1001
+}
