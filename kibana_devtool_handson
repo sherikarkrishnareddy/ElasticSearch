@@ -696,3 +696,664 @@ PUT microservice-logs/_settings
 {
   "index.mapping.total_fields.limit":1001
 }
+GET movies/_search
+{
+"query": {
+  "bool": {
+    "must": [
+      {"match": {
+        "title": "star"
+      }
+      }
+    ],
+    "filter": [
+      {"range": {
+        "year": {
+          "gte": 2016
+        }
+      }}
+    ]
+  }
+}
+}
+
+GET movies/_search?q=title:star
+GET movies/_search?q=+year:>2010+title:star
+
+GET movies/_search
+{
+  "query": {
+    "match": {
+      "title": "star"
+    }
+  }
+}
+
+GET movies/_search
+{
+"query": {
+  "bool": {
+    "must": 
+      {
+        "term": {"title": "star"}
+      },
+    "filter": 
+      {
+        "range": {"year": {"gte": 2016}}
+        
+      }
+    
+    }
+  }
+}
+GET movies/_mapping
+
+GET movies/_search
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "star beyond","slop": 1
+      }
+    }
+  }
+}
+
+GET movies/_search
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "star beyond","slop": 100
+      }
+    }
+  }
+}
+GET movies/_search?q=%2Btitle%3Astar%20wars+%2Byear%3A%3E1980
+
+GET movies/_search
+{
+  "query": {
+    "bool": {
+      "must": 
+        {
+          "match_phrase": {
+          "title": "star wars"
+          }
+          
+        },
+        "filter": 
+        {
+          "range": {
+            "year": {
+              "gte": 1980
+            }
+          }
+        }
+        
+          
+        }
+      
+    }
+}
+
+
+GET movies/_search?q=title:star
+GET movies/_search?q=+year:>2010+title:star
+
+GET movies/_search
+{
+  "query": {
+    "match": {
+      "title": "star"
+    }
+  }
+}
+
+GET movies/_search
+{
+"query": {
+  "bool": {
+    "must": 
+      {
+        "term": {"title": "star"}
+      },
+    "filter": 
+      {
+        "range": {"year": {"gte": 2016}}
+        
+      }
+    
+    }
+  }
+}
+GET movies/_mapping
+
+GET movies/_search
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "star beyond","slop": 1
+      }
+    }
+  }
+}
+
+GET movies/_search
+{
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "star beyond","slop": 100
+      }
+    }
+  }
+}
+GET movies/_search?q=%2Btitle%3Astar%20wars+%2Byear%3A%3E1980
+
+GET movies/_search
+{
+  "query": {
+    "bool": {
+      "must": 
+        {
+          "match_phrase": {
+          "title": "star wars"
+          }
+          
+        },
+        "filter": 
+        {
+          "range": {
+            "year": {
+              "gte": 1980
+            }
+          }
+        }
+        
+          
+        }
+      
+    }
+}
+#   pagination
+
+GET movies/_search
+{
+  "from": 2
+  , "size": 4
+  
+}
+
+#Sorting
+GET movies/_search
+{
+  "sort": [
+    {
+      "year": {
+        "order": "asc"
+      }
+    }
+  ]
+}
+DELETE movies
+
+PUT movies
+{
+  "mappings": {
+    "properties": {
+      "title":{
+        "type": "text",
+        "fields": {
+          "raw":{
+            "type":"keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+GET movies/_search?sort=title.raw
+
+
+#nested search
+GET movies/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "genre": "Sci-Fi"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "match": {
+            "title": "trek"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "range": {
+            "year": {
+              "gte": 2010,
+              "lt": 2015
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+GET movies/_search
+GET movies/_mapping
+GET movies/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "genre": "sci-fi"
+          }
+        }
+      ],
+      "must_not": [
+        
+      ],
+      "filter": [
+        {
+          "range": {
+            "year": {
+              "lt": 1960
+            }
+          }
+        }
+      ]
+    }
+  }
+  , 
+  "sort": [
+    {
+      "title.raw": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+#    Fuzzy Query, lavenshtein edit distance
+#substituation , insertions, deletions
+GET movies/_search?q=interstellar
+GET movies/_search
+{
+  "query": {
+    "fuzzy": {
+      "title": {"value": "intresteller","fuzziness": 2}
+  }
+}
+}
+#prefix query
+GET movies/_search
+{
+  "query": {
+    "prefix": {
+      "title": {
+        "value": "star"
+      }
+    }
+  }
+}
+#prefix query is supported only for text
+GET movies/_search
+{
+  "query": {
+    "prefix": {
+      "year": {
+        "value": "201"
+      }
+    }
+  }
+}
+
+#wild card query works on text field
+GET movies/_search
+{
+  "query": {
+    "wildcard": {
+      "title": {
+        "value": "st*"
+      }
+    }
+  }
+}
+
+GET movies/_search
+{
+  "query": {
+    "wildcard": {
+      "title": "i*"
+      
+    }
+  }
+}
+
+# Autocompleteion feature, abusing sloppiness, search as you type
+
+GET movies/_search
+{
+  "query": {
+    "match_phrase_prefix": {
+      "title": {"query": "star tr","slop":10}
+    }
+  }
+}
+
+#indextime with N-grams unigrams bigrams trigrams 4 grams
+#unigrams ['s','t','a','r']
+bigrams ['st','ta','ar']
+trigrams ['sta','tar']
+4 grams ['star']
+
+DELETE movies
+PUT movies
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter":{
+          "type":"edge_ngram",
+          "min_gram":1,
+          "max_gram":20
+        }
+      },
+      "analyzer": {
+        "autocomplete":{
+          "type":"custom",
+          "tokenizer":"standard",
+          "filter":[
+            "lowercase",
+            "autocomplete_filter"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title":{
+        "type": "text",
+        "analyzer": "autocomplete"
+       
+      }
+    }
+  }
+}
+
+GET movies/_mapping
+
+GET movies/_search
+{
+  "query": {
+    "match": {
+      "title": {
+        "query": "for",
+        "analyzer": "standard"
+      }
+    }
+  }
+}
+
+
+
+DELETE movies
+PUT movies
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "autocomplete_filter":{
+          "type":"edge_ngram",
+          "min_gram":1,
+          "max_gram":20
+        }
+      },
+      "analyzer": {
+        "autocomplete":{
+          "type":"custom",
+          "tokenizer":"standard",
+          "filter":[
+            "lowercase",
+            "autocomplete_filter"
+            ]
+        }
+      }
+    }
+  }
+}
+
+GET movies/_analyze
+{
+  "analyzer": "autocomplete",
+  "text": "krishnareddysonalreddy"
+}
+PUT movies/_mapping
+{
+  "properties":{
+    "title":{
+      "type":"text",
+      "analyzer":"autocomplete"
+      
+    }
+  }
+}
+
+GET movies/_search
+{
+  "query": {
+    "match": {
+      "title": "sta"
+    }
+  }
+}
+# with the above mappings , the query is also split into unigrams, bigrams, trigrams,4grams...., hence its matching "plan 9 from Outer Space"  ie [s] is matching space. to avoid this we should use standard analyzer at query side and our custom analyzer at index side. ie
+
+
+GET movies/_search
+{
+  "query": {
+    "match": {
+      "title": {
+        "query": "sta",
+        "analyzer": "standard"
+      }
+    }
+  }
+}
+#with the above query we are able to match only [sta] from query  side with [s] [st] [sta] [star]... on the index side.
+
+# but still we have a breaking things here ie 
+
+suppose your search query is 'star tre', but this time it matches
+the documents contatiing star and tre  ie
+"Star Trek Beyond" and "Star Wars: Episode VII - The Force Awakens", where as it should match only star trek beyond. 
+becuase every search term is treated independently
+[s] [st] [sta] [star] matching star of both documents , eventhough 'tre' is not in one of the documents.
+Hence we need to make use of completion suggester to avoid such unwanted matches, completion suggester will give fine control on what to match
+
+
+
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' --silent --request POST http://localhost:9200/movies/_analyze?pretty -d '
+> "tokenizer":"standard",
+> "filter":[{"type":"edge_ngram","min_gram":1,"max_gram":4}],
+> "text":"star"
+> }'
+{
+  "error" : {
+    "root_cause" : [
+      {
+        "type" : "x_content_parse_exception",
+        "reason" : "[2:1] [analyze_request] Expected START_OBJECT but was: VALUE_STRING"
+      }
+    ],
+    "type" : "x_content_parse_exception",
+    "reason" : "[2:1] [analyze_request] Expected START_OBJECT but was: VALUE_STRING"
+  },
+  "status" : 400
+}
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' --silent --request POST http://localhost:9200/movies/_analyze?pretty -d '
+{"tokenizer":"standard",
+"filter":[{"type":"edge_ngram","min_gram":1,"max_gram":4}],
+"text":"star"
+}'
+{
+  "tokens" : [
+    {
+      "token" : "s",
+      "start_offset" : 0,
+      "end_offset" : 4,
+      "type" : "<ALPHANUM>",
+      "position" : 0
+    },
+    {
+      "token" : "st",
+      "start_offset" : 0,
+      "end_offset" : 4,
+      "type" : "<ALPHANUM>",
+      "position" : 0
+    },
+    {
+      "token" : "sta",
+      "start_offset" : 0,
+      "end_offset" : 4,
+      "type" : "<ALPHANUM>",
+      "position" : 0
+    },
+    {
+      "token" : "star",
+      "start_offset" : 0,
+      "end_offset" : 4,
+      "type" : "<ALPHANUM>",
+      "position" : 0
+    }
+  ]
+}
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' -XPUT http://localhost:9200/autocomplete -d '
+> {
+> "mappings":{
+> "properties":{
+> "title":{
+> "type":"search as you type"
+> },
+> "genre":{
+> "type":"search as you type"
+> }
+> }
+> }
+> }'
+{"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"No handler for type [search as you type] declared on field [genre]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping [_doc]: No handler for type [search as you type] declared on field [genre]","caused_by":{"type":"mapper_parsing_exception","reason":"No handler for type [search as you type] declared on field [genre]"}},"status":400}Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' -XPUT http://localhost:9200/autocomplete -d '
+{
+"mappings":{
+"properties":{
+"title":{
+"type":"search_as_you_type"
+},
+"genre":{
+"type":"search_as_you_type"
+}
+}
+}
+}'
+{"acknowledged":true,"shards_acknowledged":true,"index":"autocomplete"}Macbooks-POSTml-latest-small macbook$ curl -H 'Content-Type:application/json' -X 
+curl: no URL specified!
+curl: try 'curl --help' or 'curl --manual' for more information
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' -XPOST http://localhost:9200/_reindex?pretty -d '
+> {
+> "source":"movies"
+> 
+> 
+Macbooks-MBP:ml-latest-small macbook$ curl -H 'Content-Type:application/json' -XPOST http://localhost:9200/_reindex?pretty -d '
+> {
+> "source":{
+> "index":"movies"
+> }
+> ,"dest":{
+> "index":"autocomplete"
+> }
+> }'| grep "total\|created\|failures"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   400  100   331  100    69    420     87 --:--:-- --:--:-- --:--:--   506
+  "total" : 5,
+  "created" : 5,
+  "failures" : [ ]
+Macbooks-MBP:ml-latest-small macbook$ curl -XGET http://localhost:9200/autocomplete
+{"autocomplete":{"aliases":{},"mappings":{"properties":{"genre":{"type":"search_as_you_type","doc_values":false,"max_shingle_size":3},"id":{"type":"text","fields":{"keyword":{"type":"keyword","ignore_above":256}}},"title":{"type":"search_as_you_type","doc_values":false,"max_shingle_size":3},"year":{"type":"long"}}},"settings":{"index":{"routing":{"allocation":{"include":{"_tier_preference":"data_content"}}},"number_of_shards":"1","provided_name":"autocomplete","creation_date":"1634032327244","number_of_replicas":"1","uuid":"eTjOL5-sSRuaA_-aWuIUKQ","version":{"created":"7150099"}}}}}Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ 
+Macbooks-MBP:ml-latest-small macbook$ curl -XGET http://localhost:9200/autocomplete/_mapping?pretty
+{
+  "autocomplete" : {
+    "mappings" : {
+      "properties" : {
+        "genre" : {
+          "type" : "search_as_you_type",
+          "doc_values" : false,
+          "max_shingle_size" : 3
+        },
+        "id" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "title" : {
+          "type" : "search_as_you_type",
+          "doc_values" : false,
+          "max_shingle_size" : 3
+        },
+        "year" : {
+          "type" : "long"
+        }
+      }
+    }
+  }
+}
+Macbooks-MBP:ml-latest-small macbook$ 
+#Search as you type
+we send search request to search api (JQ), we will use multi match query to be able to search over multiple fields at same time,
+why multimatch ?
+remember for each declared search as you type field another three subfields are created so we need to search in more than one field, 
+also we will use bool prefix type, becuase it can match search  towords any order and also assigns higher score towords the same order as query this is exactly what we need in an autocomplete scienarios .
+
+Lets search for title field for the incomplete search query 'sta'
+
+GET /autocomplete/_search?pretty --data-raw {
+   "size": 5,
+   "query": {
+       "multi_match": {
+           "query": "Sta",
+           "type": "bool_prefix",
+           "fields": [
+               "title",
+               "title._2gram",
+               "title._3gram"
+           ]
+       }
+   }
+}
+
